@@ -11,7 +11,6 @@ export interface TgCloudStorage {
 
 interface TgWebApp {
   initData: string
-  initDataUnsafe: { user?: { language_code?: string } }
   colorScheme: 'light' | 'dark'
   isVersionAtLeast(version: string): boolean
   ready(): void
@@ -46,7 +45,6 @@ const at = (version: string) => !!tg?.isVersionAtLeast(version)
 export const inTelegram = !!tg
 export const hasNativeBackButton = at('6.1')
 export const cloudStorage: TgCloudStorage | undefined = at('6.9') ? tg!.CloudStorage : undefined
-export const languageCode = (): string | undefined => tg?.initDataUnsafe.user?.language_code
 
 export function initTelegram() {
   if (!tg) return

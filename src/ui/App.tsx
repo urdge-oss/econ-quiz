@@ -1,11 +1,11 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { validateBank, type Bank, type Question } from '../engine/bank'
 import { buildFinal, startRun, submitAnswer, type Mode } from '../engine/game'
-import { detectLang, dicts, I18nProvider } from '../i18n'
+import { DEFAULT_LANG, dicts, I18nProvider } from '../i18n'
 import { recordAnswer, recordRun, type Progress } from '../storage/progress'
 import { loadProgress, saveProgress } from '../storage/storage'
 import {
-  confirmDialog, haptic, hasNativeBackButton, languageCode, onThemeChanged, setAppColor, showBackButton, telegramDark,
+  confirmDialog, haptic, hasNativeBackButton, onThemeChanged, setAppColor, showBackButton, telegramDark,
 } from '../telegram'
 import { Briefing } from './Briefing'
 import { Home } from './Home'
@@ -23,7 +23,6 @@ async function loadBank(): Promise<Bank> {
 }
 
 const systemDark = () => telegramDark() ?? matchMedia('(prefers-color-scheme: dark)').matches
-const autoLang = () => detectLang(languageCode() ?? navigator.language)
 
 export type Update = (fn: (p: Progress) => Progress) => void
 
@@ -55,7 +54,7 @@ export function App() {
 
   const update: Update = useCallback((fn) => setProgress((p) => p && fn(p)), [])
 
-  const lang = progress?.settings.lang ?? autoLang()
+  const lang = progress?.settings.lang ?? DEFAULT_LANG
   const t = dicts[lang]
   useEffect(() => {
     document.documentElement.lang = lang
@@ -240,7 +239,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   }
   render() {
     if (!this.state.error) return this.props.children
-    const t = dicts[autoLang()]
+    const t = dicts[DEFAULT_LANG]
     return (
       <div className="app center">
         <h2>{t.crash}</h2>

@@ -355,13 +355,9 @@ const uk: Dict = {
 export const dicts: Record<Lang, Dict> = { ru, uk, en }
 export const LANG_NAMES: Record<Lang, string> = { ru: 'Русский', uk: 'Українська', en: 'English' }
 
-/** uk → Ukrainian, ru → Russian, anything else → English; no code at all → Russian (the default). */
-export function detectLang(code: string | undefined): Lang {
-  if (!code) return 'ru'
-  const base = code.toLowerCase().split('-')[0]
-  return base === 'uk' ? 'uk' : base === 'ru' ? 'ru' : 'en'
-}
+/** UI language until the player picks another one in Settings. */
+export const DEFAULT_LANG: Lang = 'en'
 
-const I18n = createContext<Dict>(ru)
+const I18n = createContext<Dict>(dicts[DEFAULT_LANG])
 export const I18nProvider = I18n.Provider
 export const useT = () => useContext(I18n)
