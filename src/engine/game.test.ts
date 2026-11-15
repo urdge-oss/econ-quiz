@@ -1,30 +1,51 @@
 import { describe, expect, it } from 'vitest'
-import raw from '../../public/data/questions.json'
-import { validateBank, type Question } from './bank'
+import index from '../../public/data/courses.json'
+import weRaw from '../../public/data/courses/world-economy.json'
+import microRaw from '../../public/data/courses/microeconomics.json'
+import { validateBank, validateIndex, type Question } from './bank'
 import {
   addMistake, buildFinal, isCorrect, pickExam, positionMatches, prepareQuestion, rating,
   reviewAnswer, shuffle, startRun, submitAnswer, type Run,
 } from './game'
 
-const bank = validateBank(raw)
+const bank = validateBank(weRaw)
+const micro = validateBank(microRaw)
 const q = (over: Partial<Question>): Question => ({
-  id: 'T-1', level: 1, type: 'single', examRefs: [1], difficulty: 1, volatile: false,
+  id: 'T-1', level: 1, type: 'single', examRefs: [1], difficulty: 1, volatile: false, chart: null,
   question: '?', explanation: '!', options: ['a', 'b', 'c', 'd'].map((id) => ({ id, text: id })), correct: ['a'],
   ...over,
 })
 const identityRng = () => 0.9999 // Fisher–Yates with j = i at every step leaves the order unchanged
 
-describe('bank', () => {
-  it('validates the real questions.json', () => {
-    expect(bank.questions).toHaveLength(316)
-    expect(bank.levels).toHaveLength(13)
-    expect(bank.examQuestions).toHaveLength(110)
+describe('course data', () => {
+  it('validates courses.json and both course files, and the index matches them', () => {
+    const courses = validateIndex(index)
+    expect(courses.map((c) => c.id)).toEqual(['world-economy', 'microeconomics'])
+    for (const [info, b] of [[courses[0], bank], [courses[1], micro]] as const) {
+      expect(b.course.id).toBe(info.id)
+      expect(b.levels).toHaveLength(info.levels)
+      expect(b.questions).toHaveLength(info.questions)
+      expect(b.examQuestions).toHaveLength(info.examQuestions)
+    }
+    expect([bank.levels.length, bank.questions.length, bank.examQuestions.length]).toEqual([13, 316, 110])
+    expect([micro.levels.length, micro.questions.length, micro.examQuestions.length]).toEqual([15, 354, 120])
+    expect(micro.charts).toHaveLength(10)
+    expect(micro.questions.filter((x) => x.chart)).toHaveLength(29)
+    expect(micro.course.answerFramework.map((f) => f.weight)).toEqual([30, 25, 25, 20])
+    expect(bank.course.answerFramework).toEqual([])
   })
   it('rejects broken data with a readable message', () => {
-    const broken = structuredClone(raw) as typeof raw
+    const broken = structuredClone(weRaw) as typeof weRaw
     broken.questions[5].correct = ['z']
     expect(() => validateBank(broken)).toThrow(/L01-006\.correct/)
-    expect(() => validateBank({ schemaVersion: 2 })).toThrow(/schemaVersion/)
+    expect(() => validateBank({ schemaVersion: 1 })).toThrow(/schemaVersion/)
+    const badChart = structuredClone(microRaw) as typeof microRaw
+    badChart.questions.find((x) => x.chart)!.chart = 'nope'
+    expect(() => validateBank(badChart)).toThrow(/unknown chart nope/)
+    const badCurve = structuredClone(microRaw) as typeof microRaw
+    badCurve.charts[0].curves[0].points = [[0, 1]]
+    expect(() => validateBank(badCurve)).toThrow(/chart ceiling\.curves\[0\]\.points/)
+    expect(() => validateIndex({ schemaVersion: 2, courses: [{ ...index.courses[0], id: 'a:b' }] })).toThrow(/id/)
   })
 })
 
@@ -39,7 +60,7 @@ describe('shuffle', () => {
     expect(input[0]).toBe(0)
   })
   it('shuffles options of every real question without losing any', () => {
-    for (const x of bank.questions) {
+    for (const x of [...bank.questions, ...micro.questions]) {
       const p = prepareQuestion(x)
       expect(p.options.map((o) => o.id).sort()).toEqual(x.options.map((o) => o.id).sort())
     }
@@ -50,7 +71,7 @@ describe('order questions', () => {
   const ord = q({ type: 'order', options: ['a', 'b', 'c'].map((id) => ({ id, text: id })), correct: ['a', 'b', 'c'] })
   it('never starts in the correct order, even when the shuffle returns it', () => {
     expect(prepareQuestion(ord, identityRng).options.map((o) => o.id)).not.toEqual(ord.correct)
-    for (const x of bank.questions.filter((b) => b.type === 'order')) {
+    for (const x of [...bank.questions, ...micro.questions].filter((b) => b.type === 'order')) {
       for (let t = 0; t < 50; t++) expect(prepareQuestion(x).options.map((o) => o.id)).not.toEqual(x.correct)
     }
   })
@@ -107,17 +128,22 @@ describe('lives and game over', () => {
 })
 
 describe('final exam', () => {
-  it('takes exactly N per level, no repeats, mixed difficulty when possible', () => {
-    const ids = bank.levels.map((l) => l.id)
+  it.each([
+    ['world-economy', bank, 39],
+    ['microeconomics', micro, 45],
+  ] as const)('%s: exactly N per level, no repeats, mixed difficulty when possible', (_, b, total) => {
+    const ids = b.levels.map((l) => l.id)
+    const per = b.finalExam.questionsPerLevel
+    expect(per * ids.length).toBe(total)
     for (let t = 0; t < 30; t++) {
-      const f = buildFinal(bank.questions, ids, 3)
-      expect(f).toHaveLength(39)
-      expect(new Set(f.map((x) => x.id)).size).toBe(39)
+      const f = buildFinal(b.questions, ids, per)
+      expect(f).toHaveLength(total)
+      expect(new Set(f.map((x) => x.id)).size).toBe(total)
       for (const l of ids) {
         const mine = f.filter((x) => x.level === l)
-        expect(mine).toHaveLength(3)
-        const available = new Set(bank.questions.filter((x) => x.level === l).map((x) => x.difficulty)).size
-        expect(new Set(mine.map((x) => x.difficulty)).size).toBe(Math.min(3, available))
+        expect(mine).toHaveLength(per)
+        const available = new Set(b.questions.filter((x) => x.level === l).map((x) => x.difficulty)).size
+        expect(new Set(mine.map((x) => x.difficulty)).size).toBe(Math.min(per, available))
       }
     }
   })

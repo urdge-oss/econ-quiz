@@ -2,12 +2,12 @@ import { useState } from 'react'
 import type { Bank } from '../engine/bank'
 import type { Mode } from '../engine/game'
 import { useT } from '../i18n'
-import { isPassed, type Progress } from '../storage/progress'
+import { isPassed, type CourseProgress } from '../storage/progress'
 import { Rating } from './icons'
-import type { Kind } from './nav'
+import type { BriefingKind } from './nav'
 
 /** Pre-run screen for a level, the final exam or the mistakes review. */
-export function Briefing({ bank, progress, kind, onStart }: { bank: Bank; progress: Progress; kind: Kind; onStart: (mode: Mode) => void }) {
+export function Briefing({ bank, progress, kind, onStart }: { bank: Bank; progress: CourseProgress; kind: BriefingKind; onStart: (mode: Mode) => void }) {
   const t = useT()
   const [mode, setMode] = useState<Mode>('normal')
 
@@ -27,7 +27,7 @@ export function Briefing({ bank, progress, kind, onStart }: { bank: Bank; progre
     count = bank.questions.filter((q) => q.level === l.id).length
   } else if (kind.type === 'final') {
     const per = bank.finalExam.questionsPerLevel
-    const allPassed = bank.levels.every((l) => isPassed(progress.results[l.id]))
+    const allPassed = bank.levels.every((l) => isPassed(progress.levels[l.id]))
     title = t.finalExam
     subtitle = bank.finalExam.subtitle
     range = t.examRange(1, bank.examQuestions.length)
@@ -39,7 +39,7 @@ export function Briefing({ bank, progress, kind, onStart }: { bank: Bank; progre
     count = Object.keys(progress.mistakes).length
   }
   const withModes = kind.type === 'level' || kind.type === 'final'
-  const result = kind.type === 'level' ? progress.results[kind.level] : kind.type === 'final' ? progress.results.final : undefined
+  const result = kind.type === 'level' ? progress.levels[kind.level] : kind.type === 'final' ? progress.levels.final : undefined
 
   return (
     <div className="stack">

@@ -1,6 +1,6 @@
-# World Economy Quiz — question bank (preview)
+# 🌍 World Economy Quiz — question bank (preview)
 
-Data as of 2026-11. Correct answers are marked ✅. Questions marked 🔄 contain figures that should be updated every year.
+Data as of 2026-11. Correct answers are marked ✅. 🔄 = figures to update every year. 📊 = the question shows a graph (see the chart list at the end).
 
 ## Level 1 · The Big Picture — World economy: concept, history, structure, country groups
 Exam questions 1–5 · 18 quiz questions
@@ -3361,7 +3361,7 @@ Which NIC economies were among the top FDI recipients in 2025?
 
 > As hubs for regional headquarters and finance, Singapore and Hong Kong rank right after the US; they also lead the IMD competitiveness ranking 2026.
 
-## Exam questions — key points (oral practice mode)
+## Exam questions — oral practice cards
 
 **1. The concept of world economy and world market**
 - World economy: system of national economies linked by the international division of labour
@@ -4022,3 +4022,4 @@ Which NIC economies were among the top FDI recipients in 2025?
 - Later liberalization: WTO, Korea in OECD (1996)
 - FTAs: KORUS, Korea–EU, Singapore's network, RCEP, CPTPP
 - Outward FDI; Singapore and Hong Kong top FDI hubs (2025)
+

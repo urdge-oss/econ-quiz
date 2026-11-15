@@ -1,12 +1,13 @@
 import type { Bank } from '../engine/bank'
 import { useT } from '../i18n'
-import { isPassed, type Progress } from '../storage/progress'
+import { isPassed, type CourseProgress } from '../storage/progress'
 import { Bars, Crown, Gear, Rating, Star } from './icons'
 import type { Go } from './nav'
 
-export function Home({ bank, progress, go }: { bank: Bank; progress: Progress; go: Go }) {
+export function Home({ bank, progress, multi, go }: { bank: Bank; progress: CourseProgress; multi: boolean; go: Go }) {
   const t = useT()
-  const results = bank.levels.map((l) => progress.results[l.id])
+  const course = bank.course.id
+  const results = bank.levels.map((l) => progress.levels[l.id])
   const passed = results.filter(isPassed).length
   const stars = results.reduce((s, r) => s + (r?.stars ?? 0), 0)
   const crowns = results.filter((r) => r?.crown).length
@@ -14,17 +15,30 @@ export function Home({ bank, progress, go }: { bank: Bank; progress: Progress; g
 
   return (
     <>
-      <header className="row">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1>World Economy Quiz</h1>
-          <p className="muted">{t.tagline}</p>
+      <header>
+        <div className="row" style={{ flexWrap: 'nowrap' }}>
+          <span className="course-emoji" aria-hidden="true">
+            {bank.course.emoji}
+          </span>
+          <span className="spacer" />
+          <button className="sk btn icon-btn" onClick={() => go({ name: 'stats', course })} aria-label={t.stats} title={t.stats}>
+            <Bars />
+          </button>
+          <button className="sk btn icon-btn" onClick={() => go({ name: 'settings' })} aria-label={t.settings} title={t.settings}>
+            <Gear />
+          </button>
         </div>
-        <button className="sk btn icon-btn" onClick={() => go({ name: 'stats' })} aria-label={t.stats} title={t.stats}>
-          <Bars />
-        </button>
-        <button className="sk btn icon-btn" onClick={() => go({ name: 'settings' })} aria-label={t.settings} title={t.settings}>
-          <Gear />
-        </button>
+        {/* the title gets the full width: "Microeconomics" in the hand font barely fits a 320 px screen */}
+        <h1>
+          {multi ? (
+            <button className="course-switch" onClick={() => go({ name: 'courses' })} aria-label={`${bank.course.title}. ${t.switchCourse}`}>
+              {bank.course.title} <span className="caret">▼</span>
+            </button>
+          ) : (
+            bank.course.title
+          )}
+        </h1>
+        <p className="muted">{bank.course.subtitle}</p>
       </header>
 
       <div className="sk card summary section">
@@ -52,7 +66,7 @@ export function Home({ bank, progress, go }: { bank: Bank; progress: Progress; g
         {bank.levels.map((l, i) => {
           const r = results[i]
           return (
-            <button key={l.id} className="sk level-card" onClick={() => go({ name: 'briefing', kind: { type: 'level', level: l.id } })}>
+            <button key={l.id} className="sk level-card" onClick={() => go({ name: 'briefing', course, kind: { type: 'level', level: l.id } })}>
               <span className="n" aria-label={t.level(l.id)}>
                 {l.id}
               </span>
@@ -67,15 +81,15 @@ export function Home({ bank, progress, go }: { bank: Bank; progress: Progress; g
       </div>
 
       <div className="stack section">
-        <button className="sk btn wide primary col" onClick={() => go({ name: 'briefing', kind: { type: 'final' } })}>
+        <button className="sk btn wide primary col" onClick={() => go({ name: 'briefing', course, kind: { type: 'final' } })}>
           {t.finalExam}
           {passed < bank.levels.length && <small>{t.finalHint}</small>}
         </button>
-        <button className="sk btn wide col" disabled={mistakes === 0} onClick={() => go({ name: 'briefing', kind: { type: 'review' } })}>
+        <button className="sk btn wide col" disabled={mistakes === 0} onClick={() => go({ name: 'briefing', course, kind: { type: 'review' } })}>
           {t.mistakes}
           <small>{t.mistakesToReview(mistakes)}</small>
         </button>
-        <button className="sk btn wide col" onClick={() => go({ name: 'oral', oral: { level: null, weakest: false } })}>
+        <button className="sk btn wide col" onClick={() => go({ name: 'oral', course })}>
           {t.oral}
           <small>{t.oralHint}</small>
         </button>

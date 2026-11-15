@@ -1,27 +1,28 @@
-import type { Bank } from '../engine/bank'
+import type { CourseInfo } from '../engine/bank'
 import { APP_VERSION, REPO_URL } from '../config'
 import { LANG_NAMES, useT } from '../i18n'
-import { defaultProgress, type Lang, type Progress, type Theme } from '../storage/progress'
+import { defaultCourse, type Lang, type Progress, type Theme } from '../storage/progress'
 import { confirmDialog, openExternalLink } from '../telegram'
 import type { Update } from './App'
 
 interface Props {
-  bank: Bank
+  index: CourseInfo[]
   progress: Progress
   lang: Lang
   update: Update
   onToast: (msg: string) => void
 }
 
-export function Settings({ bank, progress, lang, update, onToast }: Props) {
+/** Settings are shared by all courses; progress can be reset per course or for all of them. */
+export function Settings({ index, progress, lang, update, onToast }: Props) {
   const t = useT()
   const set = (patch: Partial<Progress['settings']>) => update((p) => ({ ...p, settings: { ...p.settings, ...patch } }))
   const { theme, timer } = progress.settings
   const themes: [Theme, string][] = [['auto', t.themeAuto], ['light', t.themeLight], ['dark', t.themeDark]]
 
-  const reset = async () => {
-    if (!(await confirmDialog(t.resetConfirm))) return
-    update((p) => ({ ...defaultProgress(), settings: p.settings }))
+  const reset = async (ids: string[], question: string) => {
+    if (!(await confirmDialog(question))) return
+    update((p) => ({ ...p, courses: { ...p.courses, ...Object.fromEntries(ids.map((id) => [id, defaultCourse()])) } }))
     onToast(t.resetDone)
   }
 
@@ -56,14 +57,31 @@ export function Settings({ bank, progress, lang, update, onToast }: Props) {
         ))}
       </div>
 
-      <button className="sk btn wide section" onClick={reset} style={{ color: 'var(--bad-ink)' }}>
-        {t.reset}
-      </button>
+      <h3 className="section">{t.reset}</h3>
+      <div className="stack">
+        {index.map((c) => {
+          const name = `${c.emoji} ${c.title}`
+          return (
+            <button key={c.id} className="sk btn wide" onClick={() => reset([c.id], t.resetCourseConfirm(c.title))} style={{ color: 'var(--bad-ink)' }}>
+              {t.resetCourse(name)}
+            </button>
+          )
+        })}
+        {index.length > 1 && (
+          <button className="sk btn wide" onClick={() => reset(index.map((c) => c.id), t.resetConfirm)} style={{ color: 'var(--bad-ink)' }}>
+            {t.resetAll}
+          </button>
+        )}
+      </div>
 
       <div className="sk card stack section">
         <h3>{t.about}</h3>
-        <p>World Economy Quiz</p>
-        <p className="muted">{t.dataVersion(bank.dataAsOf)}</p>
+        <p>{t.appName}</p>
+        {index.map((c) => (
+          <p key={c.id} className="muted">
+            {t.dataVersion(`${c.emoji} ${c.title}`, c.dataAsOf)}
+          </p>
+        ))}
         <p className="muted">{t.appVersion(APP_VERSION)}</p>
         <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => openExternalLink(REPO_URL)}>
           {t.repo}

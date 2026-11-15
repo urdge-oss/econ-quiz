@@ -1,0 +1,27 @@
+{
+ "schemaVersion": 2,
+ "courses": [
+  {
+   "id": "world-economy",
+   "title": "World Economy",
+   "subtitle": "Oral exam · 110 questions",
+   "emoji": "🌍",
+   "file": "courses/world-economy.json",
+   "dataAsOf": "2026-11",
+   "levels": 13,
+   "questions": 316,
+   "examQuestions": 110
+  },
+  {
+   "id": "microeconomics",
+   "title": "Microeconomics",
+   "subtitle": "Pindyck & Rubinfeld · oral exam · 120 questions",
+   "emoji": "📈",
+   "file": "courses/microeconomics.json",
+   "dataAsOf": "2026-11",
+   "levels": 15,
+   "questions": 354,
+   "examQuestions": 120
+  }
+ ]
+}

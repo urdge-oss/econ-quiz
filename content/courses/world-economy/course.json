@@ -1,0 +1,16 @@
+{
+  "id": "world-economy",
+  "order": 1,
+  "title": "World Economy",
+  "subtitle": "Oral exam · 110 questions",
+  "emoji": "🌍",
+  "language": "en",
+  "dataAsOf": "2026-11",
+  "examQuestionCount": 110,
+  "finalExam": {
+    "title": "Final Exam",
+    "subtitle": "All topics, balanced random sample",
+    "questionsPerLevel": 3
+  },
+  "answerFramework": []
+}

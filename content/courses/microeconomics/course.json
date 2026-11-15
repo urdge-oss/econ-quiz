@@ -1,0 +1,21 @@
+{
+  "id": "microeconomics",
+  "order": 2,
+  "title": "Microeconomics",
+  "subtitle": "Pindyck & Rubinfeld · oral exam · 120 questions",
+  "emoji": "📈",
+  "language": "en",
+  "dataAsOf": "2026-11",
+  "examQuestionCount": 120,
+  "finalExam": {
+    "title": "Final Exam",
+    "subtitle": "All topics, balanced random sample",
+    "questionsPerLevel": 3
+  },
+  "answerFramework": [
+    {"kind": "theory", "weight": 30, "label": "Theory", "hint": "Define the concept precisely and state the assumptions"},
+    {"kind": "math", "weight": 25, "label": "Math", "hint": "Write the key formula or optimality condition and say what each term means"},
+    {"kind": "graph", "weight": 25, "label": "Graph", "hint": "Sketch it: label axes, curves, equilibrium points and surplus areas"},
+    {"kind": "policy", "weight": 20, "label": "Application", "hint": "Give a business or policy example and interpret the result"}
+  ]
+}

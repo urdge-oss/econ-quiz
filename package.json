@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "content:build": "node scripts/content-build.mjs"
+    "content:build": "node scripts/py.mjs content/tools/build_bank.py --out public/data",
+    "content:charts": "node scripts/py.mjs content/tools/make_charts.py && npm run content:build"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.3.0",

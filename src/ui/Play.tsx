@@ -4,9 +4,11 @@ import { MAX_LIVES, positionMatches, type Run } from '../engine/game'
 import { REPORT_CHAT } from '../config'
 import { useT } from '../i18n'
 import { haptic, openTelegramLink } from '../telegram'
+import { Chart } from './Chart'
 import { Book, Check, Cross, Heart, Pencil } from './icons'
 
-const LETTERS = 'ABCDEF'
+// Graph areas are lettered A–D, so answers to a graph question are numbered instead: "B + C" on button A would confuse.
+const labelsFor = (q: Question) => (q.chart ? '123456' : 'ABCDEF')
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -46,6 +48,7 @@ export function Play({ bank, run, onSubmit, onDone, onToast }: Props) {
   const q = run.questions[idx]
   const last = reveal ? run.answers[idx] : undefined
   const maxLives = MAX_LIVES[run.mode]
+  const chart = q.chart ? bank.charts.find((c) => c.id === q.chart) : undefined
 
   useEffect(() => {
     if (reveal) feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -60,7 +63,7 @@ export function Play({ bank, run, onSubmit, onDone, onToast }: Props) {
 
   const report = async () => {
     const level = bank.levels.find((l) => l.id === q.level)!
-    const copied = await copyText(t.reportTemplate(q.id, `${t.level(level.id)} · ${level.title}`, q.question))
+    const copied = await copyText(t.reportTemplate(bank.course.id, q.id, `${t.level(level.id)} · ${level.title}`, q.question))
     onToast(copied ? t.reportCopied : t.reportNotCopied(q.id))
     openTelegramLink(`https://t.me/${REPORT_CHAT}`)
   }
@@ -86,6 +89,7 @@ export function Play({ bank, run, onSubmit, onDone, onToast }: Props) {
         <p className="question">{q.question}</p>
         {q.type === 'multi' && <p className="hint">{t.selectAll}</p>}
         {q.type === 'order' && !last && <p className="hint">{t.orderHint}</p>}
+        {chart && <Chart spec={chart} />}
       </div>
 
       <div className="section">
@@ -103,6 +107,7 @@ export function Play({ bank, run, onSubmit, onDone, onToast }: Props) {
             {last.correct ? t.correct : t.wrong}
           </div>
           <p>{q.explanation}</p>
+          {chart && <Chart spec={chart} showNotes />}
           <div className="row">
             {q.examRefs.map((n) => (
               <span key={n} className="badge">
@@ -154,7 +159,7 @@ function ChoiceQuestion({ q, result, onAnswer }: { q: Question; result?: string[
                 aria-pressed={multi ? chosen : undefined}
                 onClick={() => (multi ? toggle(o.id) : onAnswer([o.id]))}
               >
-                <span className="letter">{LETTERS[i]}</span>
+                <span className="letter">{labelsFor(q)[i]}</span>
                 <span>
                   {o.text}
                   {done && chosen && <span className="tag"> · {t.yourChoice}</span>}
@@ -223,7 +228,7 @@ function OrderQuestion({ q, result, onAnswer }: { q: Question; result?: string[]
           {pool.map((o, i) => (
             <li key={o.id}>
               <button className="sk choice" onClick={() => move((p) => [...p, o.id])}>
-                <span className="letter">{LETTERS[i]}</span>
+                <span className="letter">{labelsFor(q)[i]}</span>
                 <span>{o.text}</span>
                 <span />
               </button>

@@ -1,18 +1,24 @@
 import type { Bank } from '../engine/bank'
 import { useT } from '../i18n'
-import type { Progress } from '../storage/progress'
+import type { CourseProgress } from '../storage/progress'
 
 const pct = (c: number, a: number) => (a ? Math.round((100 * c) / a) : null)
 
-export function Stats({ bank, progress }: { bank: Bank; progress: Progress }) {
+export function Stats({ bank, progress }: { bank: Bank; progress: CourseProgress }) {
   const t = useT()
-  const total = pct(progress.correct, progress.answered)
+  const s = progress.stats
+  const total = pct(s.correct, s.answered)
   return (
     <div className="stack">
-      <h2>{t.stats}</h2>
+      <div>
+        <h2>{t.stats}</h2>
+        <p className="muted">
+          {bank.course.emoji} {bank.course.title}
+        </p>
+      </div>
       <div className="sk card summary">
         <div>
-          <div className="num">{progress.answered}</div>
+          <div className="num">{s.answered}</div>
           <div className="muted">{t.totalAnswers}</div>
         </div>
         <div>
@@ -20,7 +26,7 @@ export function Stats({ bank, progress }: { bank: Bank; progress: Progress }) {
           <div className="muted">{t.accuracy}</div>
         </div>
         <div>
-          <div className="num">{progress.bestStreak}</div>
+          <div className="num">{s.bestStreak}</div>
           <div className="muted">{t.bestStreak}</div>
         </div>
       </div>
@@ -28,7 +34,7 @@ export function Stats({ bank, progress }: { bank: Bank; progress: Progress }) {
       <h3 className="section">{t.byLevel}</h3>
       <div className="sk card stack">
         {bank.levels.map((l) => {
-          const [a, c] = progress.perLevel[l.id] ?? [0, 0]
+          const [a, c] = s.perLevel[l.id] ?? [0, 0]
           const p = pct(c, a)
           return (
             <div key={l.id}>

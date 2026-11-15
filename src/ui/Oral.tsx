@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react'
-import type { Bank, ExamQuestion } from '../engine/bank'
+import type { Bank, Chart as ChartSpec, ExamQuestion, FrameworkPart } from '../engine/bank'
 import { pickExam } from '../engine/game'
 import { useT } from '../i18n'
-import type { Progress } from '../storage/progress'
+import type { CourseProgress } from '../storage/progress'
 import { haptic } from '../telegram'
-import type { Update } from './App'
+import { Chart } from './Chart'
 import { Timer } from './icons'
 import type { OralState } from './nav'
 
 interface Props {
   bank: Bank
-  progress: Progress
-  update: Update
+  progress: CourseProgress
+  update: (fn: (c: CourseProgress) => CourseProgress) => void
+  timer: number
+  setTimer: (s: number) => void
   oral: OralState
   onChange: (oral: OralState) => void
   onPractice: (n: number) => void
 }
 
-export function Oral({ bank, progress, update, oral, onChange, onPractice }: Props) {
+export function Oral({ bank, progress, update, timer, setTimer, oral, onChange, onPractice }: Props) {
   const t = useT()
   const pick = (o: Partial<OralState>, exclude?: number) =>
     pickExam(bank.examQuestions, { level: oral.level, weakestFirst: oral.weakest, scores: progress.oral, exclude, ...o })!.n
@@ -56,10 +58,12 @@ export function Oral({ bank, progress, update, oral, onChange, onPractice }: Pro
         key={n}
         exam={exam}
         levelTitle={bank.levels.find((l) => l.id === exam.level)!.title}
-        duration={progress.settings.timer}
-        setDuration={(timer) => update((p) => ({ ...p, settings: { ...p.settings, timer } }))}
+        framework={bank.course.answerFramework}
+        chart={exam.chart ? bank.charts.find((c) => c.id === exam.chart) : undefined}
+        duration={timer}
+        setDuration={setTimer}
         score={progress.oral[n]}
-        setScore={(s) => update((p) => ({ ...p, oral: { ...p.oral, [n]: s } }))}
+        setScore={(s) => update((c) => ({ ...c, oral: { ...c.oral, [n]: s } }))}
         onPractice={() => onPractice(n)}
       />
 
@@ -73,6 +77,8 @@ export function Oral({ bank, progress, update, oral, onChange, onPractice }: Pro
 interface CardProps {
   exam: ExamQuestion
   levelTitle: string
+  framework: FrameworkPart[]
+  chart?: ChartSpec
   duration: number
   setDuration: (s: number) => void
   score?: [number, number]
@@ -80,12 +86,17 @@ interface CardProps {
   onPractice: () => void
 }
 
-function OralCard({ exam, levelTitle, duration, setDuration, score, setScore, onPractice }: CardProps) {
+function OralCard({ exam, levelTitle, framework, chart, duration, setDuration, score, setScore, onPractice }: CardProps) {
   const t = useT()
   const [left, setLeft] = useState(duration * 1000)
   const [running, setRunning] = useState(false)
   const [shown, setShown] = useState(false)
+  const [hint, setHint] = useState<string | null>(null)
+  const [chartShown, setChartShown] = useState(false)
   const [said, setSaid] = useState<boolean[]>(() => exam.keyPoints.map(() => false))
+  // "wrote the formula" / "drew the graph" count as extra points when the question has them
+  const extras = [...(exam.formulas.length ? ['formula'] : []), ...(exam.draw ? ['graph'] : [])]
+  const [done, setDone] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (!running) return
@@ -108,17 +119,28 @@ function OralCard({ exam, levelTitle, duration, setDuration, score, setScore, on
   const secs = Math.ceil(left / 1000)
   const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
 
+  const total = said.length + extras.length
+  const got = (s: boolean[], d: Record<string, boolean>) => s.filter(Boolean).length + extras.filter((x) => d[x]).length
   const toggle = (i: number) => {
     const next = said.map((v, j) => (j === i ? !v : v))
     setSaid(next)
-    setScore([next.filter(Boolean).length, next.length])
+    setScore([got(next, done), total])
   }
+  const toggleExtra = (x: string) => {
+    const next = { ...done, [x]: !done[x] }
+    setDone(next)
+    setScore([got(said, next), total])
+  }
+  const active = framework.find((f) => f.kind === hint)
 
   return (
     <div className="sk card stack">
-      <p className="hand" style={{ fontSize: '1.4rem' }}>
-        {t.examNo(exam.n)} · {levelTitle}
-      </p>
+      <div className="row">
+        <p className="hand" style={{ fontSize: '1.4rem' }}>
+          {t.examNo(exam.n)} · {levelTitle}
+        </p>
+        {exam.problem && <span className="badge problem">{t.problem}</span>}
+      </div>
       <p className="question">{exam.title}</p>
       {exam.originalTitle && exam.originalTitle !== exam.title && (
         <p className="muted">
@@ -126,6 +148,25 @@ function OralCard({ exam, levelTitle, duration, setDuration, score, setScore, on
         </p>
       )}
       {score && <p className="muted">{t.lastScore(score[0], score[1])}</p>}
+
+      {framework.length > 0 && (
+        <div className="stack" style={{ gap: 8 }}>
+          <p className="muted">{t.gradedOn}</p>
+          <div className="chips">
+            {framework.map((f) => (
+              <button key={f.kind} className="sk chip" aria-expanded={hint === f.kind} onClick={() => setHint(hint === f.kind ? null : f.kind)}>
+                {f.label} {f.weight}%
+              </button>
+            ))}
+          </div>
+          {active && (
+            <p className="hint" role="status">
+              {active.hint}
+            </p>
+          )}
+        </div>
+      )}
+      {exam.draw && <p className="hint">{t.drawHint}</p>}
 
       <div className="row section" style={{ justifyContent: 'center' }}>
         <Timer />
@@ -167,7 +208,8 @@ function OralCard({ exam, levelTitle, duration, setDuration, score, setScore, on
       </div>
 
       {shown ? (
-        <div className="section">
+        <div className="stack section">
+          <h3>{exam.problem ? t.solutionSteps : t.keyPoints}</h3>
           <p>{t.markSaid}</p>
           <ul className="points">
             {exam.keyPoints.map((p, i) => (
@@ -179,8 +221,46 @@ function OralCard({ exam, levelTitle, duration, setDuration, score, setScore, on
               </li>
             ))}
           </ul>
+
+          {exam.formulas.length > 0 && (
+            <div>
+              <h3>{t.formulas}</h3>
+              <ul className="formulas">
+                {exam.formulas.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {exam.draw && (
+            <div className="stack" style={{ gap: 8 }}>
+              <h3>{t.whatToDraw}</h3>
+              <p>{exam.draw}</p>
+              {chart && (
+                <button className="sk btn wide" aria-expanded={chartShown} onClick={() => setChartShown(!chartShown)}>
+                  {chartShown ? t.hideChart : t.showChart}
+                </button>
+              )}
+              {chart && chartShown && <Chart spec={chart} showNotes />}
+            </div>
+          )}
+
+          {extras.length > 0 && (
+            <ul className="points">
+              {extras.map((x) => (
+                <li key={x}>
+                  <label>
+                    <input type="checkbox" checked={!!done[x]} onChange={() => toggleExtra(x)} />
+                    <span>{x === 'formula' ? t.wroteFormula : t.drewGraph}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <p className="hand" style={{ fontSize: '1.4rem' }}>
-            {t.pointsScore(said.filter(Boolean).length, said.length)}
+            {extras.length ? t.scoreOf(got(said, done), total) : t.pointsScore(got(said, done), total)}
           </p>
         </div>
       ) : (

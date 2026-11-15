@@ -1,7 +1,7 @@
 import type { Bank, Question } from '../engine/bank'
 import { correctCount, rating, type Run } from '../engine/game'
 import { useT } from '../i18n'
-import type { Progress } from '../storage/progress'
+import type { CourseProgress } from '../storage/progress'
 import { Check, Crown, Rating } from './icons'
 import { exitTo, type Go, type Kind } from './nav'
 
@@ -13,7 +13,7 @@ function CorrectAnswer({ q }: { q: Question }) {
 
 interface Props {
   bank: Bank
-  progress: Progress
+  progress: CourseProgress
   kind: Kind
   run: Run
   go: Go
@@ -82,7 +82,7 @@ export function Result({ bank, progress, kind, run, go, onRetry }: Props) {
                   {ok}/{mine.length}
                 </span>
                 {ok < mine.length ? (
-                  <button className="sk btn small" onClick={() => go({ name: 'briefing', kind: { type: 'level', level: l.id } })}>
+                  <button className="sk btn small" onClick={() => go({ name: 'briefing', course: bank.course.id, kind: { type: 'level', level: l.id } })}>
                     {t.repeat}
                   </button>
                 ) : (
@@ -99,11 +99,11 @@ export function Result({ bank, progress, kind, run, go, onRetry }: Props) {
           {t.retry}
         </button>
         {kind.type === 'level' && kind.level < lastLevel && (
-          <button className="sk btn wide" onClick={() => go({ name: 'briefing', kind: { type: 'level', level: kind.level + 1 } })}>
+          <button className="sk btn wide" onClick={() => go({ name: 'briefing', course: bank.course.id, kind: { type: 'level', level: kind.level + 1 } })}>
             {t.nextLevel}
           </button>
         )}
-        <button className="sk btn wide" onClick={() => go(exitTo(kind))}>
+        <button className="sk btn wide" onClick={() => go(exitTo(bank.course.id, kind))}>
           {kind.type === 'oral' ? t.backToOral : t.toLevels}
         </button>
       </div>

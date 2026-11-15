@@ -1,5 +1,6 @@
 /* Notebook-paper look. Text colors are checked against WCAG AA (≥ 4.5:1) on every background they sit on. */
-:root {
+:root,
+[data-theme='light'] {
   --paper: #f4efe6;
   --card: #fbf8f2;
   --ink: #2f2b27;
@@ -21,10 +22,16 @@
   --hand: 'Caveat', 'Segoe Print', cursive;
   --text: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --radius: 12px 16px 13px 18px / 16px 12px 18px 13px;
+  /* chart hatching: muted palette colours, one per area */
+  --h0: #5d7aa3;
+  --h1: #b07a2a;
+  --h2: #5e8a62;
+  --h3: #b35f4c;
   color-scheme: light;
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+[data-theme='dark'] {
   --paper: #2b2e2a;
   --card: #353934;
   --ink: #e8e4da;
@@ -39,6 +46,11 @@
   --sel-bg: #363f4c;
   --sel-ink: #9db0cc;
   --accent-bg: #4a4231;
+  /* chalk on a slate board */
+  --h0: #9fb6d6;
+  --h1: #e0bf7a;
+  --h2: #a6cfa8;
+  --h3: #eaa594;
   color-scheme: dark;
 }
 
@@ -770,4 +782,240 @@ select {
     animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
   }
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* ---------- courses ---------- */
+.course-switch {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  min-height: 44px;
+}
+
+.course-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.course-switch .caret {
+  font-size: 0.6em;
+  color: var(--ink-soft);
+}
+
+.course-card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 14px;
+}
+
+.course-card .emoji {
+  grid-row: span 3;
+  font-size: 2rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.course-card .title {
+  font-family: var(--hand);
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.course-card .facts-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.92rem;
+}
+
+.course-card .facts-row .ico {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.error-text {
+  color: var(--bad-ink);
+  font-size: 0.92rem;
+}
+
+.skeleton {
+  height: 64px;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+.skeleton.tall {
+  height: 110px;
+}
+
+@keyframes pulse {
+  to { opacity: 0.45; }
+}
+
+/* ---------- charts ---------- */
+.chart {
+  position: relative;
+  margin: 0;
+}
+
+.chart-box {
+  cursor: zoom-in;
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  max-height: 45vh;
+  overflow: visible;
+}
+
+.chart-ink path {
+  stroke: var(--ink);
+}
+
+.chart-ink .guide {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.chart-text text {
+  font-family: var(--hand);
+  font-weight: 600;
+  fill: var(--ink);
+  /* a halo in the card colour keeps labels readable where they cross a line */
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.chart-text .soft {
+  fill: var(--ink-soft);
+}
+
+.chart-text .dot {
+  fill: var(--ink);
+}
+
+.chart-text .area-chip {
+  fill: var(--card);
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+
+.chart-text .area-letter {
+  font-family: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  stroke: none;
+}
+
+/* touch and mouse users tap the graph itself; this button is for the keyboard and shows up on focus */
+.chart-open {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 44px;
+  font-size: 1.3rem;
+  text-decoration: none;
+  opacity: 0;
+}
+
+.chart-open:focus-visible {
+  opacity: 1;
+  background: var(--card);
+}
+
+.chart figcaption {
+  margin-top: 6px;
+}
+
+.chart-full {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+}
+
+.chart-full > .card {
+  width: 100%;
+  max-width: 720px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.chart-full .chart-svg {
+  max-height: 72vh;
+}
+
+.dev-charts {
+  position: relative;
+  left: 50%;
+  width: min(96vw, 1240px);
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(2, 288px);
+  gap: 16px;
+  justify-content: center;
+}
+
+.dev-charts > div {
+  padding: 16px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ---------- oral: answer framework, formulas ---------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.chip[aria-expanded='true'] {
+  --bg: var(--sel-bg);
+  --bd: var(--sel-ink);
+}
+
+.badge.problem {
+  background: var(--accent-bg);
+  font-weight: 700;
+}
+
+.formulas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.formulas li {
+  padding: 6px 10px;
+  margin-top: 6px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+  border-radius: 2px 8px 8px 2px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
